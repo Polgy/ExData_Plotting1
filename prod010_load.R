@@ -1,10 +1,14 @@
 ## 00_load_Script
 library(data.table)
-powerDataFile<-'c:/temp/household_power_consumption.txt'
+
+
+#### fread currenlty does not accept connections need to pass file name as a 
+#### string. that means file has to be unzipped.
 
 f<-fread(powerDataFile, nrows=99)
 fClasses<-sapply(f, class)
-powerD<-fread(powerDataFile, colClasses=unname(fClasses), na.strings="?", skip=66637, nrow=2880)
+powerD<-fread(powerDataFile, colClasses=unname(fClasses), na.strings="?", 
+              skip=66637, nrow=2880)
 setnames(powerD, names(powerD),names(f))
 #this is not required since we already filtered rows we needed to read but in case someone passes us full dataset:
 setkey(powerD, Date)
@@ -14,4 +18,8 @@ powerD<-powerD[J(c("1/2/2007","2/2/2007"))]
 
 ### Data munging/transformations
 #### adding date field to the data.table
-powerD[,DT:=as.POSIXct(strptime(sprintf("%s;%s",Date, Time), format="%d/%m/%Y;%H:%M:%S"))]
+powerD[,DT:=as.POSIXct(
+               strptime(
+                 sprintf("%s;%s",Date, Time), format="%d/%m/%Y;%H:%M:%S")
+               )
+       ]

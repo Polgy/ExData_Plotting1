@@ -3,24 +3,62 @@ Data Exploration Assignment 01
 
 
 ```{r loadData}
+
+dir <- { if (file.exists("C:/Temp"))
+        "c:/Temp"
+        else
+          "./"
+      }
+
+pF<-'household_power_consumption.txt'
+
+
+powerDataFile <- {
+  cTempFile <- sprintf("%s/%s", "c:/temp", pF)
+  locFile <- sprintf("%s/%s", "./", pF)
+  if (file.exists(cTempFile))
+    cTempFile
+  else if (file.exists(pF))
+    pF
+  else {
+    ## stop ("did not locate uncompressed file. Stopped.")
+    ## this is machine-dependent
+    download.file(
+      url='https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2Fhousehold_power_consumption.zip', 
+      destfile="c:/temp/housing.zip")
+    system("unzip  c:/temp/housing.zip")
+    pF 
+  }
+}
+
+source("chkPkgs.R")
+checkPkgs("data.table")
+
 library(data.table)
-powerDataFile<-'c:/temp/household_power_consumption.txt'
+
+
+#### fread currenlty does not accept connections need to pass file name as a 
+#### string. that means file has to be unzipped.
 
 f<-fread(powerDataFile, nrows=99)
 fClasses<-sapply(f, class)
-powerD<-fread(powerDataFile, colClasses=unname(fClasses), na.strings="?", skip=66637, nrow=2880)
+powerD<-fread(powerDataFile, colClasses=unname(fClasses), na.strings="?", 
+              skip=66637, nrow=2880)
 setnames(powerD, names(powerD),names(f))
 #this is not required since we already filtered rows we needed to read but in case someone passes us full dataset:
 setkey(powerD, Date)
 powerD<-powerD[J(c("1/2/2007","2/2/2007"))]
 #pOrig<-copy(powerD)
-# row count of 2880 suggests we set skip and nrow correctly; This saves me dev time on re-runs.
+# row count of 2880 suggests we set skip and nrow correctly; This save me dev time on re-runs.
 
 ### Data munging/transformations
 #### adding date field to the data.table
-powerD[,DT:=as.POSIXct(strptime(sprintf("%s;%s",Date, Time), format="%d/%m/%Y;%H:%M:%S"))]
-
-
+powerD[,DT:=as.POSIXct(
+               strptime(
+                 sprintf("%s;%s",Date, Time), format="%d/%m/%Y;%H:%M:%S")
+               )
+       ]
+par(mfrow=c(1,1))
 ```
 
 
@@ -39,16 +77,14 @@ plot(powerD$DT, type="l", powerD$Global_active_power, ylab="Global Active Power 
 
 #Plot 3
 ```{r plot3,fig.width=480,fig.height=480,dependson=loadData}
-
 plot(powerD[,Sub_metering_1]~ powerD$DT, type="n", ylab="Energy sub metering", xlab="", main="", ylim=range(powerD$Sub_metering_1))
 
 with(powerD, lines(Sub_metering_1 ~ DT, col=1))
 with(powerD, lines(Sub_metering_2 ~ DT, col=2))
 with(powerD, lines(Sub_metering_3 ~ DT, col=4))
 legend("topright", legend=c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"),
-lty=c(1,1), # gives the legend appropriate symbols (lines)
-lwd=c(1,1),col=c(1,2,4)) # gives the legend lines the correct color and width
-
+lty=c(1,1), # set up lines in legend
+lwd=c(1,1),col=c(1,2,4)) # set up legend color and width
 ```
 #Plot 4
 ```{r plot4,fig.width=480,fig.height=480,dependson=loadData}
@@ -65,9 +101,7 @@ plot(powerD[,Sub_metering_1]~ powerD$DT, type="n", ylab="Energy sub metering", x
 with(powerD, lines(Sub_metering_1 ~ DT, col=1))
 with(powerD, lines(Sub_metering_2 ~ DT, col=2))
 with(powerD, lines(Sub_metering_3 ~ DT, col=4))
-legend("topright", legend=c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"),
-lty=c(1,1), # gives the legend appropriate symbols (lines)
-lwd=c(1,1),col=c(1,2,4)) # gives the legend lines the correct color and width
-
+legend("topright", legend=c("Sub_metering_1", "Sub_metering_2","Sub_metering_3"),
+lty=c(1,1), lwd=c(1,1),col=c(1,2,4)) 
 with(powerD, plot(Global_reactive_power ~ DT, xlab="datetime", type="l"))
 ```
